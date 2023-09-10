@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wordle Solver Bot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        label, input {
+            margin-bottom: 10px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        ul li {
+            background-color: #ddd;
+            margin: 5px 0;
+            padding: 10px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Wordle Solver Bot</h1>
+
+    <h3>Letters in correct position:</h3>
+    <input type="text" id="correct1" maxlength="1" size="1" oninput="moveFocus(1, 'correct')">
+    <input type="text" id="correct2" maxlength="1" size="1" oninput="moveFocus(2, 'correct')">
+    <input type="text" id="correct3" maxlength="1" size="1" oninput="moveFocus(3, 'correct')">
+    <input type="text" id="correct4" maxlength="1" size="1" oninput="moveFocus(4, 'correct')">
+    <input type="text" id="correct5" maxlength="1" size="1" oninput="moveFocus(5, 'correct')">
+    <br>
+
+    <h3>Letters in incorrect position:</h3>
+    <input type="text" id="incorrect1" maxlength="1" size="1" oninput="moveFocus(1, 'incorrect')">
+    <input type="text" id="incorrect2" maxlength="1" size="1" oninput="moveFocus(2, 'incorrect')">
+    <input type="text" id="incorrect3" maxlength="1" size="1" oninput="moveFocus(3, 'incorrect')">
+    <input type="text" id="incorrect4" maxlength="1" size="1" oninput="moveFocus(4, 'incorrect')">
+    <input type="text" id="incorrect5" maxlength="1" size="1" oninput="moveFocus(5, 'incorrect')">
+    <br>
+
+    <h3>Wrong letters:</h3>
+    <input type="text" id="wrong" placeholder="ABCDE">
+    <br>
+
+    <button onclick="filterWords()">Find Possible Words</button>
+    <button onclick="resetFields()">Reset</button>
+
+    <h2>Possible Words:</h2>
+    <ul id="possibleWords"></ul>
+
+    <script>
+
+        function moveFocus(current, type) {
+            const currentValue = document.getElementById(`${type}${current}`).value;
+            if (currentValue.length === 1 && current < 5) {
+                const next = current + 1;
+                document.getElementById(`${type}${next}`).focus();
+            }
+        }
+
+        function resetFields() {
+            // Reset correct letter fields
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`correct${i}`).value = '';
+            }
+    
+            // Reset incorrect letter fields
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`incorrect${i}`).value = '';
+            }
+    
+            // Reset wrong letter field
+            document.getElementById('wrong').value = '';
+    
+            // Clear the list of possible words
+            document.getElementById('possibleWords').innerHTML = '';
+        }
+        const wordList = [...]        
+        const commonWordList = [...]
+        function filterWords() {
+            const correct = Array.from({length: 5}, (_, i) => document.getElementById(`correct${i+1}`).value);
+            const incorrect = Array.from({length: 5}, (_, i) => document.getElementById(`incorrect${i+1}`).value);
+            const wrong = document.getElementById("wrong").value;
+
+            const possibleWords = wordList.filter(word => {
+                // Check for letters in the correct position
+                for (let i = 0; i < correct.length; i++) {
+                    if (correct[i] && word[i] !== correct[i]) {
+                        return false;
+                    }
+                }
+
+                // Check for letters in the incorrect position
+                for (let i = 0; i < incorrect.length; i++) {
+                    if (incorrect[i] && !word.includes(incorrect[i])) {
+                        return false;
+                    }
+                    if (incorrect[i] && word[i] === incorrect[i]) {
+                        return false;
+                    }
+                }
+
+                // Check for wrong letters
+                for (const letter of wrong) {
+                    const countInWord = Array.from(word).filter(l => l === letter).length;
+                    const countInCorrect = correct.filter(l => l === letter).length;
+                    const countInIncorrect = incorrect.filter(l => l === letter).length;
+
+                    if (countInWord > (countInCorrect + countInIncorrect)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+            // Assign a score to each word based on its position in the common words list
+            const scoredWords = possibleWords.map(word => {
+                const score = commonWordList.indexOf(word);
+                return { word, score };
+            });
+
+            // Sort the words by score
+            scoredWords.sort((a, b) => {
+                if (a.score === -1) return 1;  // Put words not found in commonWordList at the end
+                if (b.score === -1) return -1;
+                return a.score - b.score;  // Sort by commonality
+            });
+
+            // Display the sorted words
+            const ul = document.getElementById("possibleWords");
+            ul.innerHTML = '';
+            for (let i = 0; i < scoredWords.length; i++) {
+                const li = document.createElement("li");
+                li.appendChild(document.createTextNode((i + 1) + '. ' + scoredWords[i].word));
+                ul.appendChild(li);
+            }
+        }
+    </script>
+</body>
+</html>
